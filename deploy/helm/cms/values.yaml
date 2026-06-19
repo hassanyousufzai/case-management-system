@@ -1,0 +1,135 @@
+# CMS dependency configuration
+
+postgres:
+  enabled: true
+  fullnameOverride: cms-postgres
+
+  architecture: standalone
+
+  auth:
+    enablePostgresUser: true
+    postgresPassword: unused
+    username: postgres
+    password: unused
+    database: tazama_cms
+
+  primary:
+    persistence:
+      enabled: true
+      storageClass: local-path
+      size: 10Gi
+
+    initdb:
+      scripts:
+        01-create-databases.sql: |
+          CREATE DATABASE flowable;
+
+valkey:
+  enabled: true
+  fullnameOverride: cms-valkey
+
+  auth:
+    enabled: false
+
+  replica:
+    enabled: false
+
+  service:
+    type: ClusterIP
+    port: 6379
+
+  dataStorage:
+    enabled: true
+    requestedSize: 2Gi
+    className: local-path
+
+nats:
+  enabled: true
+  fullnameOverride: cms-nats
+
+  config:
+    cluster:
+      enabled: false
+
+    jetstream:
+      enabled: true
+
+      fileStore:
+        enabled: true
+        pvc:
+          enabled: true
+          size: 5Gi
+          storageClassName: local-path
+
+    monitor:
+      enabled: true
+      port: 8222
+
+  service:
+    enabled: true
+
+    ports:
+      nats:
+        enabled: true
+
+      cluster:
+        enabled: false
+
+      monitor:
+        enabled: true
+
+couchdb:
+  enabled: true
+  fullnameOverride: cms-couchdb
+
+  clusterSize: 1
+
+  couchdbConfig:
+    couchdb:
+      uuid: "d20e967e0ccc4bb1bd3202ec01f18a71"
+
+  allowAdminParty: false
+  createAdminSecret: true
+
+  adminUsername: admin
+  adminPassword: unused
+  cookieAuthSecret: cms-couchdb-cookie
+
+  persistentVolume:
+    enabled: true
+    storageClass: local-path
+    size: 5Gi
+
+  service:
+    enabled: true
+    type: ClusterIP
+    externalPort: 5984
+    targetPort: 5984
+
+  ingress:
+    enabled: false
+
+flowable:
+  enabled: true
+
+  postgres:
+    enabled: false
+
+  ingress:
+    enabled: false
+
+  database:
+    name: flowable
+    username: postgres
+    password: unused
+    datasourceDriverClassName: org.postgresql.Driver
+    datasourceUrl: jdbc:postgresql://cms-postgres:5432/flowable
+
+  rest:
+    enabled: true
+    replicas: 1
+
+    image:
+      repository: flowable/flowable-rest
+      tag: "7.1.0"
+      pullPolicy: IfNotPresent
