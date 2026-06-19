@@ -14,5 +14,8 @@ dependencies:
 - name: flowable
   repository: https://flowable.github.io/helm/
   version: 7.1.0
-digest: sha256:80f0bd29f3c757c6afd5a7d6718b3fdc47e4352fc488013860b2e0b822175a15
-generated: "2026-06-19T16:00:04.8929882+05:00"
+- name: keycloak
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 25.2.0
+digest: sha256:e936deb5a89d790fe04446de3229f0e1421ac88d3ed27e5f5f36c03ab22fa4ae
+generated: "2026-06-19T16:44:44.2888063+05:00"

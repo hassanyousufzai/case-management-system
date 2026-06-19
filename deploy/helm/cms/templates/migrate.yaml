@@ -1,0 +1,31 @@
+{{- if and .Values.app.enabled .Values.migrate.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "cms.componentFullname" (dict "root" . "component" "migrate") }}-{{ .Release.Revision }}
+  labels:
+    {{- include "cms.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migrate
+spec:
+  backoffLimit: {{ .Values.migrate.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.migrate.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        {{- include "cms.selectorLabels" (dict "root" . "component" "migrate") | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: "{{ .Values.migrate.image.repository }}:{{ .Values.migrate.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.migrate.image.pullPolicy }}
+          command:
+            {{- toYaml .Values.migrate.command | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "cms.componentFullname" (dict "root" . "component" "app-env") }}
+            - secretRef:
+                name: {{ include "cms.componentFullname" (dict "root" . "component" "app-secret") }}
+          resources:
+            {{- toYaml .Values.migrate.resources | nindent 12 }}
+{{- end }}

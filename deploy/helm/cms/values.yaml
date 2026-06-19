@@ -23,6 +23,7 @@ postgres:
       scripts:
         01-create-databases.sql: |
           CREATE DATABASE flowable;
+          CREATE DATABASE keycloak;
 
 valkey:
   enabled: true
@@ -133,3 +134,204 @@ flowable:
       repository: flowable/flowable-rest
       tag: "7.1.0"
       pullPolicy: IfNotPresent
+
+  keycloak:
+    enabled: true
+
+    fullnameOverride: cms-keycloak
+
+    replicaCount: 1
+
+    production: false
+
+    auth:
+      adminUser: admin
+      adminPassword: "ChangeThisKeycloakPassword"
+
+    postgresql:
+      enabled: false
+
+    externalDatabase:
+      host: cms-postgres
+      port: 5432
+      user: postgres
+      password: unused
+      database: keycloak
+      schema: public
+
+    service:
+      type: ClusterIP
+
+    ingress:
+      enabled: false
+
+    startupProbe:
+      enabled: true
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 30
+
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+
+app:
+  enabled: true
+
+  env:
+    NODE_ENV: dev
+    MAX_CPU: "4"
+    PORT: "3090"
+    POSTGRES_DB: tazama_cms
+    POSTGRES_USER: postgres
+    POSTGRES_HOST: 10.10.80.16
+    POSTGRES_PORT: "15432"
+    TRIAGE_TYPE: MANUAL
+    AI_MODEL_ENDPOINT: http://10.10.80.16:8000/predict
+    CONFIDENCE_THRESHOLD: "95"
+    CLIENT_SYSTEM_INTERDICTION_ENABLED: "true"
+    SYSTEM_UUID: a9a8ff94-c7e4-4e6c-b421-e6d5d75a76e1
+    TAZAMA_AUTH_URL: http://10.10.80.16:3020/v1/auth
+    KEYCLOAK_GROUP_NAME: cms
+    AUTH_PUBLIC_KEY_PATH: /home/app/test-public-key.pem
+    CERT_PATH_PUBLIC: /home/app/test-public-key.pem
+    STARTUP_TYPE: nats
+    SERVER_URL: nats://10.10.80.16:14222
+    FUNCTION_NAME: case-management-system
+    PRODUCER_STREAM: default
+    CONSUMER_STREAM: investigation-service
+    REDIS_HOST: 10.10.80.16
+    REDIS_PORT: "16379"
+    REDIS_DB: "0"
+    PRIORITY_FIRST_HALF: "0.33"
+    PRIORITY_SECOND_HALF: "0.66"
+    PRIORITY_THIRD_HALF: "1.0"
+    DEFAULT_SLA_HOURS: "72"
+    ALERT_PRIORITY_CRON_SCHEDULE: "0* * * *"
+    AUTO_ASSIGNMENT_ENABLED: "false"
+    SMTP_HOST: smtp.gmail.com
+    SMTP_PORT: "587"
+    MAIL_FROM: cbe.system.user@gmail.com
+    FLOWABLE_URL: http://10.10.80.16:8081/flowable-rest
+    FLOWABLE_USERNAME: rest-admin
+    SPRING_DATASOURCE_DRIVER: org.postgresql.Driver
+    SPRING_DATASOURCE_URL: jdbc:postgresql://10.10.80.16:15433/flowable
+    SPRING_DATASOURCE_USERNAME: postgres
+    COUCHDB_URL: http://10.10.80.16:5984
+    COUCHDB_DATABASE: cms-evidence
+    COUCHDB_USERNAME: simon
+    COUCHDB_USER: simon
+    VOILA_URL: 10.10.80.16:8866
+    VOILA_BASE_URL: http://10.10.80.16:8866
+    CMS_FRONTEND_ORIGIN: http://10.10.80.16:5175
+    AUDIT_PROVIDER: opensearch
+    OPENSEARCH_NODE: http://10.10.80.16:9200
+    OPENSEARCH_USERNAME: admin
+    OPENSEARCH_SSL_REJECT_UNAUTHORIZED: "false"
+    OPENSEARCH_REFRESH: "false"
+    GOLD_LAKEHOUSE_API_URL: http://10.10.80.20:8282
+    GOLD_LAKEHOUSE_TIMEOUT: "120000"
+
+  secretEnv:
+    POSTGRES_PASSWORD: unused
+    DATABASE_URL: postgresql://postgres:unused@10.10.80.16:15433/tazama_cms
+    REDIS_PASSWORD: ""
+    SMTP_USER: cbe.system.user@gmail.com
+    SMTP_PASS: "qlhz cxvp qnem wpuc"
+    FLOWABLE_PASSWORD: test
+    SPRING_DATASOURCE_PASSWORD: unused
+    COUCHDB_PASSWORD: "1234"
+    OPENSEARCH_PASSWORD: admin
+
+backend:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: tazama-cms-backend
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 3090
+    targetPort: 3090
+
+  publicKeyMountPath: /home/app/test-public-key.pem
+
+  publicKey: |
+    -----BEGIN PUBLIC KEY-----
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0GfZWizLKDZPKp7re/G6
+    OmzmjoYomHjr5IBi//YgBKt3bDNboUx6WeARE5tLuCpqLUiu00NtA14Jya1tA8pO
+    CiGDOT6aCEiQa5UM3Q2A1wK3f7ckSS037Ok+wecZLdqWtO/itECbgpwGa8osGNTW
+    GjLvHIJ72eYyEMK/rHaLT7sUf+K6SqoBgbHlqpPDjZuA/NARymbiceiuAH0Onbli
+    VlIIehhQUXSXagOxx648M2AimDwPGo4FIrq4XF541TYsJfoO3OZ0gfkux4B7JD6j
+    HRPiAJVgPNWE1G13sphDg7AU/YlrE435t+wmi8x/8/EVDMeWChtD2BGdo0QbQ4Jw
+    MwIDAQAB
+    -----END PUBLIC KEY-----
+
+  resources: {}
+
+frontend:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: tazama-cms-frontend
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  env:
+    VITE_API_BASE_URL: http://localhost:3090
+    VITE_APP_NAME: Tazama Case Management System
+    VITE_APP_VERSION: 0.0.1
+    VITE_CRYPTO_KEY: rCRrt08XYmYZrUoKffOQWXa327AJyBxv
+
+  service:
+    type: ClusterIP
+    port: 5173
+    targetPort: 5173
+
+  resources: {}
+
+migrate:
+  enabled: true
+  backoffLimit: 6
+  ttlSecondsAfterFinished: 86400
+
+  image:
+    repository: tazama-cms-migrate
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  command:
+    - sh
+    - /home/app/migrate.sh
+
+  resources: {}
+
+voila:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: tazama-cms-voila
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  env:
+    CASE_MGMT_BACKEND_URL: 'http://{{ include "cms.componentFullname" (dict "root" . "component" "backend") }}:3090'
+    VOILA_PORT: "8866"
+    CMS_FRONTEND_ORIGIN: http://10.10.80.16:5175
+
+  service:
+    type: ClusterIP
+    port: 8866
+    targetPort: 8866
+
+  resources: {}

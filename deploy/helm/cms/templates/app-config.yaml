@@ -1,0 +1,28 @@
+{{- if .Values.app.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cms.componentFullname" (dict "root" . "component" "app-env") }}
+  labels:
+    {{- include "cms.labels" . | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.app.env }}
+  {{ $key }}: {{ tpl ($value | toString) $ | quote }}
+  {{- end }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "cms.componentFullname" (dict "root" . "component" "app-secret") }}
+  labels:
+    {{- include "cms.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  {{- range $key, $value := .Values.app.secretEnv }}
+  {{ $key }}: {{ tpl ($value | toString) $ | quote }}
+  {{- end }}
+  {{- if .Values.backend.publicKey }}
+  public.pem: |-
+{{ .Values.backend.publicKey | trim | nindent 4 }}
+  {{- end }}
+{{- end }}

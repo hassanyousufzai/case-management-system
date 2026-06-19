@@ -1,0 +1,64 @@
+{{- if and .Values.app.enabled .Values.voila.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cms.componentFullname" (dict "root" . "component" "voila") }}
+  labels:
+    {{- include "cms.labels" . | nindent 4 }}
+    app.kubernetes.io/component: voila
+spec:
+  replicas: {{ .Values.voila.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "cms.selectorLabels" (dict "root" . "component" "voila") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "cms.selectorLabels" (dict "root" . "component" "voila") | nindent 8 }}
+    spec:
+      containers:
+        - name: voila
+          image: "{{ .Values.voila.image.repository }}:{{ .Values.voila.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.voila.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.voila.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.voila.env }}
+            - name: {{ $key }}
+              value: {{ tpl ($value | toString) $ | quote }}
+            {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ include "cms.componentFullname" (dict "root" . "component" "app-secret") }}
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.voila.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cms.componentFullname" (dict "root" . "component" "voila") }}
+  labels:
+    {{- include "cms.labels" . | nindent 4 }}
+    app.kubernetes.io/component: voila
+spec:
+  type: {{ .Values.voila.service.type }}
+  selector:
+    {{- include "cms.selectorLabels" (dict "root" . "component" "voila") | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.voila.service.port }}
+      targetPort: http
+      protocol: TCP
+{{- end }}
