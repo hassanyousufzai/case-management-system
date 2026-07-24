@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 COPY notebooks /app/notebooks
 
 # install python dependencies
-RUN pip install --no-cache-dir -r /app/notebooks/requirements.txt
+RUN pip install -r /app/notebooks/requirements.txt
 
 # expose voila port
 EXPOSE 8866
