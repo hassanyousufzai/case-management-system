@@ -11,7 +11,7 @@ services:
     command: sh /home/app/migrate.sh
 
   couchdb:
-    image: couchdb:3.3
+    image: couchdb:3.4
     container_name: tazama-cms-couchdb
     restart: unless-stopped
     env_file:
